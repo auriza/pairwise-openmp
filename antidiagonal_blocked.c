@@ -9,6 +9,7 @@
 #define MATCH       +1
 #define MISMATCH    -1
 #define GAP         -3
+#define BLOCK       4
 
 double time;
 
@@ -43,27 +44,35 @@ void LCS_length(const char *X, const char *Y, short int ***c_out, char ***b_out)
     }
 
     time = omp_get_wtime();
+    
+    int M = m/BLOCK;
+    int N = n/BLOCK;
 
     #pragma omp parallel for schedule(static,1) private(i,j,diag,up,left)
-    for (k = 1; k <= m+n; k++) {
-        if (k < m) {
-            for (i = k, j = 1; i > 0 && j <= n; i--, j++) {
+    for (k = 1; k <= M+N; k++) {
+        if (k < M) {
+            for (i = k, j = 1; i > 0 && j <= N; i--, j++) {
 
-                while (b[i][j-1] == 0 || b[i-1][j] == 0);
-
-                diag = c[i-1][j-1] + ((X[i-1] == Y[j-1])? MATCH : MISMATCH);
-                up   = c[i-1][j] + GAP;
-                left = c[i][j-1] + GAP;
-
-                if (diag >= up && diag >= left) {
-                    c[i][j] = diag;
-                    b[i][j] = '\\';
-                } else if (up >= left) {
-                    c[i][j] = up;
-                    b[i][j] = '|';
-                } else {
-                    c[i][j] = left;
-                    b[i][j] = '_';
+                for (ii = i*BLOCK; ii < BLOCK; ii++) {
+                    for (jj = j*BLOCK; jj < BLOCK; jj++) {
+                
+                        while (b[i][j-1] == 0 || b[i-1][j] == 0);
+        
+                        diag = c[i-1][j-1] + ((X[i-1] == Y[j-1])? MATCH : MISMATCH);
+                        up   = c[i-1][j] + GAP;
+                        left = c[i][j-1] + GAP;
+        
+                        if (diag >= up && diag >= left) {
+                            c[i][j] = diag;
+                            b[i][j] = '\\';
+                        } else if (up >= left) {
+                            c[i][j] = up;
+                            b[i][j] = '|';
+                        } else {
+                            c[i][j] = left;
+                            b[i][j] = '_';
+                        }
+                    }
                 }
             }
         } else if (k > m) {
