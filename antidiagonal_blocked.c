@@ -1,3 +1,4 @@
+//  FIXME: not finished yet
 //  antidiagonal; 1 antidiagonal 1 thread
 
 #include <stdio.h>
