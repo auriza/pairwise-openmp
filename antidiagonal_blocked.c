@@ -1,4 +1,6 @@
-//  FIXME: not finished yet
+//  pairwise.c
+//  (c) 2013 Auriza Akbar <auriza.akbar@gmail.com>
+
 //  antidiagonal; 1 antidiagonal 1 thread
 
 #include <stdio.h>
@@ -10,7 +12,8 @@
 #define MATCH       +1
 #define MISMATCH    -1
 #define GAP         -3
-#define BLOCK       4
+
+#define BS          20      // blocksize
 
 double time;
 
@@ -21,7 +24,7 @@ void LCS_length(const char *X, const char *Y, short int ***c_out, char ***b_out)
     short int **c;  // length matrix
     char **b;       // arrow matrix
     int diag, left, up; // diagonal (upper-left), left, up score
-    int i, j, k;
+    int i, j;
 
     m = strlen(X);
     n = strlen(Y);
@@ -45,24 +48,25 @@ void LCS_length(const char *X, const char *Y, short int ***c_out, char ***b_out)
     }
 
     time = omp_get_wtime();
-    
-    int M = m/BLOCK;
-    int N = n/BLOCK;
 
-    #pragma omp parallel for schedule(static,1) private(i,j,diag,up,left)
-    for (k = 1; k <= M+N; k++) {
-        if (k < M) {
-            for (i = k, j = 1; i > 0 && j <= N; i--, j++) {
+    int M = m / BS;
+    int N = n / BS;
+    int I, J, K;
 
-                for (ii = i*BLOCK; ii < BLOCK; ii++) {
-                    for (jj = j*BLOCK; jj < BLOCK; jj++) {
-                
+    #pragma omp parallel for schedule(static,1) private(I, J, i,j,diag,up,left)
+    for (K = 1; K <= M+N; K++) {
+        if (K < M) {
+            for (I = K, J = 1; I > 0 && J <= N; I--, J++) {
+
+                for (i = I*BS-(BS-1); i <= I*BS; i++) {
+                    for (j = J*BS-(BS-1); j <= J*BS; j++) {
+
                         while (b[i][j-1] == 0 || b[i-1][j] == 0);
-        
+
                         diag = c[i-1][j-1] + ((X[i-1] == Y[j-1])? MATCH : MISMATCH);
                         up   = c[i-1][j] + GAP;
                         left = c[i][j-1] + GAP;
-        
+
                         if (diag >= up && diag >= left) {
                             c[i][j] = diag;
                             b[i][j] = '\\';
@@ -76,23 +80,29 @@ void LCS_length(const char *X, const char *Y, short int ***c_out, char ***b_out)
                     }
                 }
             }
-        } else if (k > m) {
-            for (i = m, j = k-m; i > 0 && j <= n; i--, j++) {
-                while (b[i][j-1] == 0 || b[i-1][j] == 0);
+        } else if (K > M) {
+            for (I = M, J = K-M; I > 0 && J <= N; I--, J++) {
 
-                diag = c[i-1][j-1] + ((X[i-1] == Y[j-1])? MATCH : MISMATCH);
-                up   = c[i-1][j] + GAP;
-                left = c[i][j-1] + GAP;
+                for (i = I*BS-(BS-1); i <= I*BS; i++) {
+                    for (j = J*BS-(BS-1); j <= J*BS; j++) {
 
-                if (diag >= up && diag >= left) {
-                    c[i][j] = diag;
-                    b[i][j] = '\\';
-                } else if (up >= left) {
-                    c[i][j] = up;
-                    b[i][j] = '|';
-                } else {
-                    c[i][j] = left;
-                    b[i][j] = '_';
+                        while (b[i][j-1] == 0 || b[i-1][j] == 0);
+
+                        diag = c[i-1][j-1] + ((X[i-1] == Y[j-1])? MATCH : MISMATCH);
+                        up   = c[i-1][j] + GAP;
+                        left = c[i][j-1] + GAP;
+
+                        if (diag >= up && diag >= left) {
+                            c[i][j] = diag;
+                            b[i][j] = '\\';
+                        } else if (up >= left) {
+                            c[i][j] = up;
+                            b[i][j] = '|';
+                        } else {
+                            c[i][j] = left;
+                            b[i][j] = '_';
+                        }
+                    }
                 }
             }
         }
