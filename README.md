@@ -3,7 +3,8 @@ Parallel pairwise alignment using OpenMP
 
 ## Compile and Run Test
 
-```gcc columnwise.c -o columnwise -fopenmp
+```
+gcc columnwise.c -o columnwise -fopenmp
 ./columnwise < dna-16.in
 ```
 
