@@ -1,5 +1,11 @@
 # pairwise-openmp
-Parallel pairwise alignment using OpenMP
+Parallel pairwise alignment using OpenMP using various data partition scheme:
+- columnwise
+- rowwise
+- antidiagonal
+- blocked antidiagonal
+
+For performance comparison dan results, *see* the [paper](paper.pdf).
 
 ## Compile and Run Test
 
