@@ -1,4 +1,4 @@
-//	columnwise per n/p block
+//  columnwise per n/p block
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,7 +8,7 @@
 //#define DEBUG
 #define MATCH       +1
 #define MISMATCH    -1
-#define GAP    		-3
+#define GAP         -3
 
 double time;
 
@@ -18,7 +18,7 @@ void LCS_length(const char *X, const char *Y, short int ***c_out, char ***b_out)
     int n;          // column
     short int **c;  // length matrix
     char **b;       // arrow matrix
-    int diag, left, up;	// diagonal (upper-left), left, up score
+    int diag, left, up; // diagonal (upper-left), left, up score
     int i, j;
 
     m = strlen(X);
@@ -30,48 +30,48 @@ void LCS_length(const char *X, const char *Y, short int ***c_out, char ***b_out)
         b[i] = calloc(n+1, sizeof(char));
     }
 
-	// init
-	c[0][0] = 0;
-	b[0][0] = ' ';
-	for (i = 1; i <= m; i++) {
-    	c[i][0] = i * GAP;
-    	b[i][0] = '|';
+    // init
+    c[0][0] = 0;
+    b[0][0] = ' ';
+    for (i = 1; i <= m; i++) {
+        c[i][0] = i * GAP;
+        b[i][0] = '|';
     }
     for (j = 1; j <= n; j++) {
-    	c[0][j] = j * GAP;
-    	b[0][j] = '_';
+        c[0][j] = j * GAP;
+        b[0][j] = '_';
     }
 
-	time = omp_get_wtime();
+    time = omp_get_wtime();
 
-	// fill
-	#pragma omp parallel private(i,diag,up,left)
-	for (i = 1; i <= m; i++) {
+    // fill
+    #pragma omp parallel private(i,diag,up,left)
+    for (i = 1; i <= m; i++) {
 
-		#pragma omp for schedule(static) nowait
-		for (j = 1; j <= n; j++) {
+        #pragma omp for schedule(static) nowait
+        for (j = 1; j <= n; j++) {
 
-			while (b[i][j-1] == 0);
+            while (b[i][j-1] == 0);
 
-			// calculate scoring possibility
-			diag = c[i-1][j-1] + ((X[i-1] == Y[j-1])? MATCH : MISMATCH);
-			up   = c[i-1][j] + GAP;
-			left = c[i][j-1] + GAP;
+            // calculate scoring possibility
+            diag = c[i-1][j-1] + ((X[i-1] == Y[j-1])? MATCH : MISMATCH);
+            up   = c[i-1][j] + GAP;
+            left = c[i][j-1] + GAP;
 
-			if (diag >= up && diag >= left) {
-				c[i][j] = diag;
-				b[i][j] = '\\';
-			} else if (up >= left) {
-				c[i][j] = up;
-				b[i][j] = '|';
-			} else {
-				c[i][j] = left;
-				b[i][j] = '_';
-			}
-		}
-	}
+            if (diag >= up && diag >= left) {
+                c[i][j] = diag;
+                b[i][j] = '\\';
+            } else if (up >= left) {
+                c[i][j] = up;
+                b[i][j] = '|';
+            } else {
+                c[i][j] = left;
+                b[i][j] = '_';
+            }
+        }
+    }
 
-	time = omp_get_wtime() - time;
+    time = omp_get_wtime() - time;
 
     *c_out = c;
     *b_out = b;
@@ -141,28 +141,28 @@ void LCS_print_b(const char X[], const char Y[], char **b, int m, int n)
 
 int main(void)
 {
-    short int **c;	// score matrix
-    char **b;		// direction matrix
-    char *X, *Y;	// sequences
-    int m, n;		// sequences' length
+    short int **c;  // score matrix
+    char **b;       // direction matrix
+    char *X, *Y;    // sequences
+    int m, n;       // sequences' length
 
-	scanf("%d", &m);
-	scanf("%d", &n);
+    scanf("%d", &m);
+    scanf("%d", &n);
     X = malloc((m+1) * sizeof(char));
     Y = malloc((n+1) * sizeof(char));
-	scanf("%s", X);
-	scanf("%s", Y);
+    scanf("%s", X);
+    scanf("%s", Y);
 
     LCS_length(X, Y, &c, &b);
 
-	#ifdef DEBUG
-		// print LCS
-		LCS_print_X(b, X, m, n); printf("\n");
-		LCS_print_Y(b, Y, m, n); printf("\n\n");
+    #ifdef DEBUG
+        // print LCS
+        LCS_print_X(b, X, m, n); printf("\n");
+        LCS_print_Y(b, Y, m, n); printf("\n\n");
 
-		LCS_print_c(c, m, n);
-		LCS_print_b(X, Y, b, m, n);
-	#endif
+        LCS_print_c(c, m, n);
+        LCS_print_b(X, Y, b, m, n);
+    #endif
 
     printf("Time: %f s\tScore: %d\n", time, c[m][n]);
 
